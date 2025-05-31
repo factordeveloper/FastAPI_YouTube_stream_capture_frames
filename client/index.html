@@ -1,0 +1,545 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Captura de YouTube - Panel de Control</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            padding: 20px;
+        }
+
+        .container {
+            max-width: 800px;
+            margin: 0 auto;
+            background: rgba(255, 255, 255, 0.95);
+            backdrop-filter: blur(10px);
+            border-radius: 20px;
+            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+        }
+
+        .header {
+            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            color: white;
+            padding: 30px;
+            text-align: center;
+            position: relative;
+            overflow: hidden;
+        }
+
+        .header::before {
+            content: '';
+            position: absolute;
+            top: -50%;
+            left: -50%;
+            width: 200%;
+            height: 200%;
+            background: repeating-linear-gradient(
+                45deg,
+                transparent,
+                transparent 10px,
+                rgba(255, 255, 255, 0.1) 10px,
+                rgba(255, 255, 255, 0.1) 20px
+            );
+            animation: slide 20s linear infinite;
+        }
+
+        @keyframes slide {
+            0% { transform: translateX(-50px); }
+            100% { transform: translateX(50px); }
+        }
+
+        .header h1 {
+            font-size: 2.5em;
+            margin-bottom: 10px;
+            position: relative;
+            z-index: 1;
+        }
+
+        .header p {
+            font-size: 1.1em;
+            opacity: 0.9;
+            position: relative;
+            z-index: 1;
+        }
+
+        .content {
+            padding: 40px;
+        }
+
+        .form-section {
+            background: #f8f9fa;
+            border-radius: 15px;
+            padding: 30px;
+            margin-bottom: 30px;
+            border: 2px solid #e9ecef;
+            transition: all 0.3s ease;
+        }
+
+        .form-section:hover {
+            border-color: #667eea;
+            transform: translateY(-2px);
+            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
+        }
+
+        .form-group {
+            margin-bottom: 25px;
+        }
+
+        label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: #333;
+            font-size: 1.1em;
+        }
+
+        input[type="url"], input[type="number"] {
+            width: 100%;
+            padding: 15px;
+            border: 2px solid #ddd;
+            border-radius: 10px;
+            font-size: 16px;
+            transition: all 0.3s ease;
+            background: white;
+        }
+
+        input[type="url"]:focus, input[type="number"]:focus {
+            outline: none;
+            border-color: #667eea;
+            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
+            transform: scale(1.02);
+        }
+
+        .btn {
+            background: linear-gradient(135deg, #667eea, #764ba2);
+            color: white;
+            border: none;
+            padding: 15px 30px;
+            border-radius: 50px;
+            font-size: 16px;
+            font-weight: 600;
+            cursor: pointer;
+            transition: all 0.3s ease;
+            text-transform: uppercase;
+            letter-spacing: 1px;
+            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+        }
+
+        .btn:hover {
+            transform: translateY(-3px);
+            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.6);
+        }
+
+        .btn:active {
+            transform: translateY(-1px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(135deg, #ffa726, #ff7043);
+            box-shadow: 0 5px 15px rgba(255, 167, 38, 0.4);
+        }
+
+        .btn-secondary:hover {
+            box-shadow: 0 10px 25px rgba(255, 167, 38, 0.6);
+        }
+
+        .status-section {
+            background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
+            border-radius: 15px;
+            padding: 30px;
+            border: 2px solid #c8e6c9;
+        }
+
+        .status-display {
+            background: white;
+            border-radius: 10px;
+            padding: 20px;
+            margin-top: 20px;
+            border-left: 5px solid #4caf50;
+            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+        }
+
+        .status-item {
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            padding: 10px 0;
+            border-bottom: 1px solid #eee;
+        }
+
+        .status-item:last-child {
+            border-bottom: none;
+        }
+
+        .status-label {
+            font-weight: 600;
+            color: #555;
+        }
+
+        .status-value {
+            color: #333;
+            font-family: monospace;
+            background: #f5f5f5;
+            padding: 5px 10px;
+            border-radius: 5px;
+        }
+
+        .loading {
+            display: inline-block;
+            width: 20px;
+            height: 20px;
+            border: 3px solid #f3f3f3;
+            border-top: 3px solid #667eea;
+            border-radius: 50%;
+            animation: spin 1s linear infinite;
+            margin-left: 10px;
+        }
+
+        @keyframes spin {
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
+        }
+
+        .alert {
+            padding: 15px;
+            border-radius: 10px;
+            margin: 20px 0;
+            font-weight: 500;
+        }
+
+        .alert-success {
+            background: #d4edda;
+            color: #155724;
+            border: 1px solid #c3e6cb;
+        }
+
+        .alert-error {
+            background: #f8d7da;
+            color: #721c24;
+            border: 1px solid #f5c6cb;
+        }
+
+        .alert-info {
+            background: #cce7ff;
+            color: #004085;
+            border: 1px solid #b3d7ff;
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                margin: 10px;
+                border-radius: 15px;
+            }
+            
+            .content {
+                padding: 20px;
+            }
+            
+            .header h1 {
+                font-size: 2em;
+            }
+            
+            .form-section {
+                padding: 20px;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 Captura de YouTube</h1>
+            <p>Panel de Control para Captura de Streams</p>
+        </div>
+        
+        <div class="content">
+            <!-- Sección de inicio de captura -->
+            <div class="form-section">
+                <h2>🚀 Iniciar Nueva Captura</h2>
+                <form id="captureForm">
+                    <div class="form-group">
+                        <label for="youtubeUrl">URL de YouTube:</label>
+                        <input 
+                            type="url" 
+                            id="youtubeUrl" 
+                            name="youtubeUrl" 
+                            placeholder="https://www.youtube.com/watch?v=STREAM_ID"
+                            required
+                        >
+                    </div>
+                    
+                    <div class="form-group">
+                        <label for="duration">Duración (minutos):</label>
+                        <input 
+                            type="number" 
+                            id="duration" 
+                            name="duration" 
+                            min="1" 
+                            max="300" 
+                            value="30"
+                            required
+                        >
+                    </div>
+                    
+                    <button type="submit" class="btn">
+                        Iniciar Captura
+                    </button>
+                </form>
+            </div>
+
+            <!-- Sección de estado -->
+            <div class="status-section">
+                <h2>📊 Estado del Sistema</h2>
+                <button type="button" class="btn btn-secondary" onclick="checkStatus()">
+                    Actualizar Estado
+                </button>
+                
+                <div id="statusDisplay" class="status-display" style="display: none;">
+                    <div class="status-item">
+                        <span class="status-label">Estado:</span>
+                        <span class="status-value" id="statusValue">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">URL Actual:</span>
+                        <span class="status-value" id="currentUrl">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Duración:</span>
+                        <span class="status-value" id="currentDuration">-</span>
+                    </div>
+                    <div class="status-item">
+                        <span class="status-label">Tiempo Transcurrido:</span>
+                        <span class="status-value" id="elapsedTime">-</span>
+                    </div>
+                </div>
+            </div>
+
+            <!-- Área de mensajes -->
+            <div id="messageArea"></div>
+        </div>
+    </div>
+
+    <script>
+        // Detectar si estamos en desarrollo local o necesitamos proxy
+        const API_BASE = 'http://localhost:8000';
+        
+        // Test de conectividad al cargar
+        async function testConnection() {
+            try {
+                console.log('Probando conexión a la API...');
+                const response = await fetch(`${API_BASE}/status`, { 
+                    method: 'GET',
+                    mode: 'cors'
+                });
+                console.log('✅ Conexión exitosa a la API');
+                return true;
+            } catch (error) {
+                console.error('❌ Error de conexión inicial:', error);
+                showMessage(`⚠️ No se puede conectar a la API en ${API_BASE}. Verifica que esté corriendo.`, 'error');
+                return false;
+            }
+        }
+        
+        // Elementos del DOM
+        const captureForm = document.getElementById('captureForm');
+        const statusDisplay = document.getElementById('statusDisplay');
+        const messageArea = document.getElementById('messageArea');
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', async function() {
+            console.log('Iniciando aplicación...');
+            
+            // Test inicial de conexión
+            const connected = await testConnection();
+            
+            if (connected) {
+                checkStatus();
+                // Auto-actualizar estado cada 30 segundos
+                setInterval(checkStatus, 30000);
+            } else {
+                // Mostrar sugerencias de solución
+                setTimeout(() => {
+                    showMessage(`💡 Posibles soluciones:
+                    1. Verifica que tu API esté corriendo en localhost:8000
+                    2. Abre la consola del navegador (F12) para más detalles
+                    3. Verifica la configuración de CORS en FastAPI`, 'info');
+                }, 2000);
+            }
+        });
+
+        // Manejar envío del formulario
+        captureForm.addEventListener('submit', async function(e) {
+            e.preventDefault();
+            
+            const formData = new FormData(captureForm);
+            const youtubeUrl = formData.get('youtubeUrl');
+            const duration = parseInt(formData.get('duration'));
+            
+            if (!youtubeUrl || !duration) {
+                showMessage('Por favor completa todos los campos', 'error');
+                return;
+            }
+
+            await startCapture(youtubeUrl, duration);
+        });
+
+        // Función para iniciar captura
+        async function startCapture(youtubeUrl, durationMinutes) {
+            try {
+                showMessage('Iniciando captura...', 'info');
+                
+                console.log('Intentando conectar a:', `${API_BASE}/start-capture`);
+                
+                const response = await fetch(`${API_BASE}/start-capture`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        youtube_url: youtubeUrl,
+                        duration_minutes: durationMinutes
+                    })
+                });
+
+                console.log('Response status:', response.status);
+                console.log('Response headers:', [...response.headers.entries()]);
+
+                const data = await response.json();
+
+                if (response.ok) {
+                    showMessage('✅ Captura iniciada exitosamente', 'success');
+                    
+                    // Limpiar formulario
+                    captureForm.reset();
+                    document.getElementById('duration').value = '30';
+                    
+                    // Actualizar estado
+                    setTimeout(checkStatus, 1000);
+                } else {
+                    showMessage(`❌ Error HTTP ${response.status}: ${data.detail || 'Error desconocido'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error completo:', error);
+                
+                // Diagnóstico más detallado
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showMessage(`❌ No se puede conectar al servidor en ${API_BASE}. ¿Está corriendo la API?`, 'error');
+                } else if (error.name === 'NetworkError') {
+                    showMessage(`❌ Error de red: Verifica CORS y que la API esté accesible`, 'error');
+                } else {
+                    showMessage(`❌ Error: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Función para verificar estado
+        async function checkStatus() {
+            try {
+                console.log('Verificando estado en:', `${API_BASE}/status`);
+                
+                const response = await fetch(`${API_BASE}/status`);
+                console.log('Status response:', response.status);
+                
+                const data = await response.json();
+
+                if (response.ok) {
+                    updateStatusDisplay(data);
+                    statusDisplay.style.display = 'block';
+                } else {
+                    showMessage(`❌ Error al obtener estado HTTP ${response.status}: ${data.detail || 'Error desconocido'}`, 'error');
+                }
+            } catch (error) {
+                console.error('Error al verificar estado:', error);
+                
+                if (error.name === 'TypeError' && error.message.includes('fetch')) {
+                    showMessage(`❌ No se puede conectar para verificar estado. ¿La API está corriendo en ${API_BASE}?`, 'error');
+                } else {
+                    showMessage(`❌ Error al verificar estado: ${error.message}`, 'error');
+                }
+            }
+        }
+
+        // Actualizar la visualización del estado
+        function updateStatusDisplay(data) {
+            document.getElementById('statusValue').textContent = data.status || 'Desconocido';
+            document.getElementById('currentUrl').textContent = data.current_url || 'Ninguna';
+            document.getElementById('currentDuration').textContent = 
+                data.duration_minutes ? `${data.duration_minutes} minutos` : 'N/A';
+            
+            // Calcular tiempo transcurrido si hay datos
+            let elapsedText = 'N/A';
+            if (data.start_time && data.status === 'capturing') {
+                const startTime = new Date(data.start_time);
+                const now = new Date();
+                const elapsedMs = now - startTime;
+                const elapsedMinutes = Math.floor(elapsedMs / 60000);
+                const elapsedSeconds = Math.floor((elapsedMs % 60000) / 1000);
+                elapsedText = `${elapsedMinutes}:${elapsedSeconds.toString().padStart(2, '0')}`;
+            }
+            
+            document.getElementById('elapsedTime').textContent = elapsedText;
+
+            // Cambiar color según el estado
+            const statusElement = document.getElementById('statusValue');
+            statusElement.className = 'status-value';
+            
+            if (data.status === 'capturing') {
+                statusElement.style.backgroundColor = '#c8e6c9';
+                statusElement.style.color = '#2e7d32';
+            } else if (data.status === 'idle') {
+                statusElement.style.backgroundColor = '#e3f2fd';
+                statusElement.style.color = '#1976d2';
+            } else if (data.status === 'error') {
+                statusElement.style.backgroundColor = '#ffebee';
+                statusElement.style.color = '#c62828';
+            }
+        }
+
+        // Mostrar mensajes al usuario
+        function showMessage(message, type) {
+            const alertDiv = document.createElement('div');
+            alertDiv.className = `alert alert-${type}`;
+            alertDiv.textContent = message;
+            
+            messageArea.innerHTML = '';
+            messageArea.appendChild(alertDiv);
+            
+            // Auto-ocultar después de 5 segundos
+            setTimeout(() => {
+                alertDiv.style.opacity = '0';
+                alertDiv.style.transform = 'translateY(-10px)';
+                setTimeout(() => {
+                    if (alertDiv.parentNode) {
+                        alertDiv.parentNode.removeChild(alertDiv);
+                    }
+                }, 300);
+            }, 5000);
+        }
+
+        // Validación en tiempo real de URL
+        document.getElementById('youtubeUrl').addEventListener('input', function(e) {
+            const url = e.target.value;
+            const isValid = url.includes('youtube.com/watch') || url.includes('youtu.be/');
+            
+            if (url && !isValid) {
+                e.target.style.borderColor = '#ff6b6b';
+                e.target.style.boxShadow = '0 0 0 3px rgba(255, 107, 107, 0.1)';
+            } else {
+                e.target.style.borderColor = '#ddd';
+                e.target.style.boxShadow = 'none';
+            }
+        });
+    </script>
+</body>
+</html>

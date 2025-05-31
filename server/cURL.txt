@@ -1,0 +1,13 @@
+# Iniciar captura
+
+
+curl -X POST "http://localhost:8000/start-capture" \
+     -H "Content-Type: application/json" \
+     -d '{"youtube_url": "https://www.youtube.com/watch?v=STREAM_ID", "duration_minutes": 30}'
+
+
+
+# Ver estado
+
+
+curl "http://localhost:8000/status"
