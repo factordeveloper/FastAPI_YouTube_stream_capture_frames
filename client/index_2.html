@@ -1,0 +1,1187 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>YouTube Frame Capture Client - Tiempo Real</title>
+    <style>
+        * {
+            margin: 0;
+            padding: 0;
+            box-sizing: border-box;
+        }
+
+        body {
+            font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+            background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+            min-height: 100vh;
+            color: #333;
+        }
+
+        .container {
+            max-width: 1200px;
+            margin: 0 auto;
+            padding: 20px;
+        }
+
+        .header {
+            text-align: center;
+            margin-bottom: 30px;
+            color: white;
+            position: sticky;
+            top: 0;
+            background: rgba(102, 126, 234, 0.95);
+            backdrop-filter: blur(10px);
+            z-index: 100;
+            padding: 20px;
+            border-radius: 15px;
+            margin-bottom: 20px;
+        }
+
+        .header h1 {
+            font-size: 2.5rem;
+            margin-bottom: 10px;
+            text-shadow: 2px 2px 4px rgba(0,0,0,0.3);
+        }
+
+        .header p {
+            font-size: 1.1rem;
+            opacity: 0.9;
+        }
+
+        .realtime-indicator {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+            margin-top: 10px;
+            padding: 5px 15px;
+            background: rgba(255, 255, 255, 0.2);
+            border-radius: 20px;
+            font-size: 0.9rem;
+        }
+
+        .connection-dot {
+            width: 8px;
+            height: 8px;
+            border-radius: 50%;
+            background: #48bb78;
+            animation: pulse 2s infinite;
+        }
+
+        .connection-dot.disconnected {
+            background: #f56565;
+            animation: none;
+        }
+
+        .dashboard {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(300px, 1fr));
+            gap: 20px;
+            margin-bottom: 30px;
+        }
+
+        .card {
+            background: rgba(255, 255, 255, 0.95);
+            border-radius: 15px;
+            padding: 25px;
+            box-shadow: 0 8px 32px rgba(0, 0, 0, 0.1);
+            backdrop-filter: blur(10px);
+            border: 1px solid rgba(255, 255, 255, 0.2);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+        }
+
+        .card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 12px 40px rgba(0, 0, 0, 0.15);
+        }
+
+        .card h3 {
+            color: #4a5568;
+            margin-bottom: 15px;
+            font-size: 1.3rem;
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        .status-indicator {
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            display: inline-block;
+        }
+
+        .status-active {
+            background: #48bb78;
+            box-shadow: 0 0 10px #48bb78;
+            animation: pulse 2s infinite;
+        }
+
+        .status-inactive {
+            background: #f56565;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.5; }
+        }
+
+        .stat-value {
+            font-size: 2rem;
+            font-weight: bold;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .controls {
+            display: flex;
+            gap: 10px;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .btn {
+            padding: 12px 24px;
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            font-size: 1rem;
+            font-weight: 600;
+            transition: all 0.3s ease;
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+
+        .btn:disabled {
+            opacity: 0.6;
+            cursor: not-allowed;
+        }
+
+        .btn-primary {
+            background: linear-gradient(45deg, #4299e1, #3182ce);
+            color: white;
+        }
+
+        .btn-primary:hover:not(:disabled) {
+            background: linear-gradient(45deg, #3182ce, #2c5aa0);
+            transform: translateY(-2px);
+        }
+
+        .btn-danger {
+            background: linear-gradient(45deg, #f56565, #e53e3e);
+            color: white;
+        }
+
+        .btn-danger:hover:not(:disabled) {
+            background: linear-gradient(45deg, #e53e3e, #c53030);
+            transform: translateY(-2px);
+        }
+
+        .btn-secondary {
+            background: linear-gradient(45deg, #718096, #4a5568);
+            color: white;
+        }
+
+        .btn-secondary:hover:not(:disabled) {
+            background: linear-gradient(45deg, #4a5568, #2d3748);
+            transform: translateY(-2px);
+        }
+
+        .url-input {
+            flex: 1;
+            min-width: 300px;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+            transition: border-color 0.3s ease;
+        }
+
+        .url-input:focus {
+            outline: none;
+            border-color: #4299e1;
+            box-shadow: 0 0 0 3px rgba(66, 153, 225, 0.1);
+        }
+
+        .duration-input {
+            width: 120px;
+            padding: 12px;
+            border: 2px solid #e2e8f0;
+            border-radius: 8px;
+            font-size: 1rem;
+        }
+
+        .frames-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fill, minmax(300px, 1fr));
+            gap: 20px;
+            margin-top: 20px;
+        }
+
+        .frame-card {
+            background: white;
+            border-radius: 12px;
+            overflow: hidden;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            transition: transform 0.3s ease, box-shadow 0.3s ease;
+            opacity: 0;
+            transform: translateY(20px);
+            animation: fadeInUp 0.5s ease forwards;
+        }
+
+        .frame-card.new-frame {
+            animation: newFrameAnimation 0.8s ease forwards;
+        }
+
+        @keyframes fadeInUp {
+            to {
+                opacity: 1;
+                transform: translateY(0);
+            }
+        }
+
+        @keyframes newFrameAnimation {
+            0% {
+                opacity: 0;
+                transform: translateY(-20px) scale(0.9);
+                box-shadow: 0 0 20px rgba(72, 187, 120, 0.5);
+            }
+            50% {
+                box-shadow: 0 0 30px rgba(72, 187, 120, 0.8);
+            }
+            100% {
+                opacity: 1;
+                transform: translateY(0) scale(1);
+                box-shadow: 0 4px 20px rgba(0, 0, 0, 0.1);
+            }
+        }
+
+        .frame-card:hover {
+            transform: translateY(-5px);
+            box-shadow: 0 8px 30px rgba(0, 0, 0, 0.15);
+        }
+
+        .frame-image {
+            width: 100%;
+            height: 200px;
+            object-fit: cover;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .frame-image:hover {
+            transform: scale(1.05);
+        }
+
+        .frame-info {
+            padding: 15px;
+        }
+
+        .frame-timestamp {
+            font-weight: 600;
+            color: #2d3748;
+            margin-bottom: 5px;
+        }
+
+        .frame-size {
+            color: #718096;
+            font-size: 0.9rem;
+        }
+
+        .frame-category {
+            display: inline-block;
+            padding: 4px 8px;
+            border-radius: 12px;
+            font-size: 0.8rem;
+            font-weight: 600;
+            margin-top: 8px;
+        }
+
+        .category-trains {
+            background: #c6f6d5;
+            color: #22543d;
+        }
+
+        .category-no-trains {
+            background: #fed7d7;
+            color: #c53030;
+        }
+
+        .detection-info {
+            margin-top: 5px;
+            font-size: 0.85rem;
+            color: #4a5568;
+        }
+
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            margin-bottom: 20px;
+            align-items: center;
+        }
+
+        .filter-select {
+            padding: 8px 12px;
+            border: 1px solid #e2e8f0;
+            border-radius: 6px;
+            background: white;
+        }
+
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0, 0, 0, 0.9);
+            animation: fadeIn 0.3s ease;
+        }
+
+        .modal-content {
+            position: relative;
+            margin: 5% auto;
+            max-width: 90%;
+            max-height: 90%;
+            text-align: center;
+        }
+
+        .modal-image {
+            max-width: 100%;
+            max-height: 80vh;
+            border-radius: 8px;
+        }
+
+        .close-modal {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
+            z-index: 1001;
+        }
+
+        .close-modal:hover {
+            color: #ccc;
+        }
+
+        .loading {
+            text-align: center;
+            color: white;
+            font-size: 1.2rem;
+            margin: 20px 0;
+        }
+
+        .error {
+            background: #fed7d7;
+            color: #c53030;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #f56565;
+        }
+
+        .success {
+            background: #c6f6d5;
+            color: #22543d;
+            padding: 15px;
+            border-radius: 8px;
+            margin: 10px 0;
+            border-left: 4px solid #48bb78;
+        }
+
+        .input-group {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 20px;
+        }
+
+        .scroll-loading {
+            text-align: center;
+            padding: 20px;
+            color: white;
+            font-size: 1rem;
+        }
+
+        .scroll-end {
+            text-align: center;
+            padding: 20px;
+            color: rgba(255, 255, 255, 0.7);
+            font-size: 0.9rem;
+        }
+
+        .auto-scroll-toggle {
+            position: fixed;
+            bottom: 20px;
+            right: 20px;
+            z-index: 200;
+            background: rgba(66, 153, 225, 0.9);
+            color: white;
+            border: none;
+            padding: 15px;
+            border-radius: 50%;
+            cursor: pointer;
+            font-size: 1.2rem;
+            transition: all 0.3s ease;
+            box-shadow: 0 4px 20px rgba(0, 0, 0, 0.2);
+        }
+
+        .auto-scroll-toggle:hover {
+            background: rgba(66, 153, 225, 1);
+            transform: scale(1.1);
+        }
+
+        .auto-scroll-toggle.active {
+            background: rgba(72, 187, 120, 0.9);
+        }
+
+        @media (max-width: 768px) {
+            .container {
+                padding: 10px;
+            }
+            
+            .header h1 {
+                font-size: 2rem;
+            }
+            
+            .frames-grid {
+                grid-template-columns: repeat(auto-fill, minmax(250px, 1fr));
+            }
+            
+            .controls {
+                flex-direction: column;
+            }
+            
+            .input-group {
+                flex-direction: column;
+                align-items: stretch;
+            }
+        }
+    </style>
+</head>
+<body>
+    <div class="container">
+        <div class="header">
+            <h1>🎥 YouTube Frame Capture - Tiempo Real</h1>
+            <p>Monitor y gestiona la captura de fotogramas con detección automática de trenes</p>
+            <div class="realtime-indicator">
+                <div class="connection-dot" id="connectionDot"></div>
+                <span id="connectionStatus">Conectando...</span>
+            </div>
+        </div>
+
+        <div class="dashboard">
+            <div class="card">
+                <h3>📊 Estado del Sistema</h3>
+                <div class="stat-value">
+                    <span class="status-indicator" id="statusIndicator"></span>
+                    <span id="captureStatus">Cargando...</span>
+                </div>
+                <div class="stat-label">Estado de captura</div>
+            </div>
+
+            <div class="card">
+                <h3>🖼️ Total de Frames</h3>
+                <div class="stat-value" id="totalFrames">0</div>
+                <div class="stat-label">Fotogramas guardados</div>
+            </div>
+
+            <div class="card">
+                <h3>🚂 Trenes Detectados</h3>
+                <div class="stat-value" id="trainsDetected">0</div>
+                <div class="stat-label">Frames con trenes</div>
+            </div>
+
+            <div class="card">
+                <h3>⏰ Último Frame</h3>
+                <div class="stat-value" id="lastFrameTime">--</div>
+                <div class="stat-label">Timestamp</div>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🎬 Control de Captura</h3>
+            <div class="input-group">
+                <input type="url" id="youtubeUrl" class="url-input" placeholder="URL de YouTube (stream en vivo)">
+                <input type="number" id="duration" class="duration-input" placeholder="Minutos" min="0" value="60">
+                <button class="btn btn-primary" onclick="startCapture()" id="startBtn">
+                    ▶️ Iniciar Captura
+                </button>
+                <button class="btn btn-danger" onclick="stopCapture()" id="stopBtn">
+                    ⏹️ Detener Captura
+                </button>
+            </div>
+        </div>
+
+        <div class="card">
+            <h3>🛠️ Gestión de Datos</h3>
+            <div class="controls">
+                <button class="btn btn-primary" onclick="refreshData()">
+                    🔄 Actualizar
+                </button>
+                <button class="btn btn-secondary" onclick="resetFrames()">
+                    📁 Recargar Todo
+                </button>
+                <button class="btn btn-danger" onclick="deleteAllFrames()">
+                    🗑️ Eliminar Todos
+                </button>
+            </div>
+            
+            <div class="filter-controls">
+                <label for="trainFilter" style="color: #4a5568; font-weight: 600;">Filtrar por:</label>
+                <select id="trainFilter" class="filter-select" onchange="applyFilter()">
+                    <option value="">Todos los frames</option>
+                    <option value="true">Solo con trenes</option>
+                    <option value="false">Solo sin trenes</option>
+                </select>
+            </div>
+        </div>
+
+        <div id="messageContainer"></div>
+
+        <div id="framesContainer" class="frames-grid"></div>
+
+        <div id="scrollLoading" class="scroll-loading" style="display: none;">
+            🔄 Cargando más frames...
+        </div>
+
+        <div id="scrollEnd" class="scroll-end" style="display: none;">
+            📄 No hay más frames para cargar
+        </div>
+
+        <div id="loadingIndicator" class="loading" style="display: none;">
+            🔄 Cargando...
+        </div>
+    </div>
+
+    <!-- Botón de auto-scroll -->
+    <button class="auto-scroll-toggle" id="autoScrollBtn" onclick="toggleAutoScroll()" title="Auto-scroll para nuevos frames">
+        📍
+    </button>
+
+    <!-- Modal para mostrar imágenes -->
+    <div id="imageModal" class="modal">
+        <span class="close-modal" onclick="closeModal()">&times;</span>
+        <div class="modal-content">
+            <img id="modalImage" class="modal-image" src="" alt="Frame">
+        </div>
+    </div>
+
+    <script>
+        const API_BASE = 'http://localhost:8000';
+        const WS_BASE = 'ws://localhost:8000';
+        
+        let ws = null;
+        let isConnected = false;
+        let frames = [];
+        let currentFilter = null;
+        let autoScroll = true;
+        let loadingMore = false;
+        let hasMoreFrames = true;
+        let isCapturing = false;
+
+        // Función para mostrar mensajes
+        function showMessage(message, type = 'success') {
+            const container = document.getElementById('messageContainer');
+            const messageDiv = document.createElement('div');
+            messageDiv.className = type;
+            messageDiv.textContent = message;
+            container.appendChild(messageDiv);
+            
+            setTimeout(() => {
+                messageDiv.remove();
+            }, 5000);
+        }
+
+        // Función para mostrar loading
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        // Conectar WebSocket
+        function connectWebSocket() {
+            if (ws && ws.readyState === WebSocket.OPEN) {
+                return;
+            }
+
+            try {
+                ws = new WebSocket(`${WS_BASE}/ws`);
+                
+                ws.onopen = function() {
+                    console.log('WebSocket conectado');
+                    isConnected = true;
+                    updateConnectionStatus();
+                };
+                
+                ws.onmessage = function(event) {
+                    const data = JSON.parse(event.data);
+                    handleWebSocketMessage(data);
+                };
+                
+                ws.onclose = function() {
+                    console.log('WebSocket desconectado');
+                    isConnected = false;
+                    updateConnectionStatus();
+                    
+                    // Reconectar después de 3 segundos
+                    setTimeout(connectWebSocket, 3000);
+                };
+                
+                ws.onerror = function(error) {
+                    console.error('Error WebSocket:', error);
+                    isConnected = false;
+                    updateConnectionStatus();
+                };
+                
+            } catch (error) {
+                console.error('Error conectando WebSocket:', error);
+                isConnected = false;
+                updateConnectionStatus();
+                setTimeout(connectWebSocket, 5000);
+            }
+        }
+
+        // Actualizar estado de conexión
+        function updateConnectionStatus() {
+            const dot = document.getElementById('connectionDot');
+            const status = document.getElementById('connectionStatus');
+            
+            if (isConnected) {
+                dot.className = 'connection-dot';
+                status.textContent = 'Conectado en tiempo real';
+            } else {
+                dot.className = 'connection-dot disconnected';
+                status.textContent = 'Desconectado - Reintentando...';
+            }
+        }
+
+        // Manejar mensajes WebSocket
+        function handleWebSocketMessage(data) {
+            switch (data.type) {
+                case 'new_frame':
+                    addNewFrame(data.frame);
+                    updateStats();
+                    break;
+                case 'status_update':
+                    updateStatusFromWS(data.status);
+                    break;
+                case 'capture_started':
+                    isCapturing = true;
+                    updateButtons();
+                    showMessage('Captura iniciada', 'success');
+                    break;
+                case 'capture_stopped':
+                    isCapturing = false;
+                    updateButtons();
+                    showMessage(`Captura detenida. Total: ${data.total_frames} frames`, 'success');
+                    break;
+                case 'error':
+                    showMessage(data.message, 'error');
+                    break;
+            }
+        }
+
+        // Agregar nuevo frame en tiempo real
+        function addNewFrame(frame) {
+            // Verificar filtro
+            if (currentFilter !== null) {
+                if (currentFilter && !frame.has_trains) return;
+                if (!currentFilter && frame.has_trains) return;
+            }
+
+            // Agregar al inicio del array
+            frames.unshift(frame);
+            
+            // Crear elemento visual
+            const frameCard = createFrameCard(frame);
+            frameCard.classList.add('new-frame');
+            
+            // Insertar al inicio del contenedor
+            const container = document.getElementById('framesContainer');
+            container.insertBefore(frameCard, container.firstChild);
+            
+            // Auto-scroll si está activado
+            if (autoScroll) {
+                setTimeout(() => {
+                    frameCard.scrollIntoView({ behavior: 'smooth', block: 'start' });
+                }, 100);
+            }
+        }
+
+        // Crear elemento de frame
+        function createFrameCard(frame) {
+            const frameCard = document.createElement('div');
+            frameCard.className = 'frame-card';
+            frameCard.dataset.frameId = frame.id;
+            
+            const date = new Date(frame.timestamp);
+            const formattedDate = date.toLocaleString();
+            const size = (frame.size / 1024).toFixed(1);
+            
+            const imageUrl = `${API_BASE}/frame/${frame.filename}`;
+            
+            const categoryClass = frame.has_trains ? 'category-trains' : 'category-no-trains';
+            const categoryText = frame.has_trains ? `🚂 Con trenes (${frame.detection_count || 0})` : '🚫 Sin trenes';
+            
+            frameCard.innerHTML = `
+                <div class="frame-image-container">
+                    <img src="${imageUrl}" 
+                         alt="Frame ${frame.filename}" 
+                         class="frame-image"
+                         onclick="openModal('${imageUrl}')"
+                         loading="lazy">
+                </div>
+                <div class="frame-info">
+                    <div class="frame-timestamp">${formattedDate}</div>
+                    <div class="frame-size">${size} KB</div>
+                    <div class="frame-category ${categoryClass}">${categoryText}</div>
+                    ${frame.has_trains && frame.detection_count > 0 ? 
+                        `<div class="detection-info">Detectados: ${frame.detection_count} tren(es)</div>` : 
+                        ''
+                    }
+                </div>
+            `;
+            
+            return frameCard;
+        }
+
+        // Obtener estado del sistema
+        async function getStatus() {
+            try {
+                const response = await fetch(`${API_BASE}/status`, {
+                    method: 'GET',
+                    mode: 'cors',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    }
+                });
+                
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+                
+                const data = await response.json();
+                updateStatusDisplay(data);
+                
+            } catch (error) {
+                console.error('Error obteniendo estado:', error);
+                document.getElementById('captureStatus').textContent = 'Error';
+                showMessage(`Error de conexión: ${error.message}`, 'error');
+            }
+        }
+
+        // Actualizar display de estado
+        function updateStatusDisplay(data) {
+            const statusIndicator = document.getElementById('statusIndicator');
+            const captureStatus = document.getElementById('captureStatus');
+            
+            isCapturing = data.capture_active;
+            
+            if (data.capture_active) {
+                statusIndicator.className = 'status-indicator status-active';
+                captureStatus.textContent = 'Activo';
+            } else {
+                statusIndicator.className = 'status-indicator status-inactive';
+                captureStatus.textContent = 'Inactivo';
+            }
+            
+            document.getElementById('totalFrames').textContent = data.total_frames.toLocaleString();
+            document.getElementById('trainsDetected').textContent = data.frames_with_trains.toLocaleString();
+            
+            if (data.latest_frame_time) {
+                const date = new Date(data.latest_frame_time);
+                document.getElementById('lastFrameTime').textContent = date.toLocaleString();
+            } else {
+                document.getElementById('lastFrameTime').textContent = 'Sin frames';
+            }
+            
+            updateButtons();
+        }
+
+        // Actualizar estado desde WebSocket
+        function updateStatusFromWS(status) {
+            updateStatusDisplay(status);
+        }
+
+        // Actualizar estadísticas
+        function updateStats() {
+            const totalFrames = frames.length;
+            const trainsDetected = frames.filter(f => f.has_trains).length;
+            
+            document.getElementById('totalFrames').textContent = totalFrames.toLocaleString();
+            document.getElementById('trainsDetected').textContent = trainsDetected.toLocaleString();
+            
+            if (frames.length > 0) {
+                const latestFrame = frames[0];
+                const date = new Date(latestFrame.timestamp);
+                document.getElementById('lastFrameTime').textContent = date.toLocaleString();
+            }
+        }
+
+        // Actualizar botones
+        function updateButtons() {
+            const startBtn = document.getElementById('startBtn');
+            const stopBtn = document.getElementById('stopBtn');
+            
+            startBtn.disabled = isCapturing;
+            stopBtn.disabled = !isCapturing;
+        }
+
+        // Iniciar captura
+        async function startCapture() {
+            const url = document.getElementById('youtubeUrl').value;
+            const duration = parseInt(document.getElementById('duration').value) || 60;
+            
+            if (!url) {
+                showMessage('Por favor, ingresa una URL de YouTube', 'error');
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_BASE}/start-capture`, {
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                    },
+                    body: JSON.stringify({
+                        youtube_url: url,
+                        duration_minutes: duration
+                    })
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage(data.message, 'success');
+                    isCapturing = true;
+                    updateButtons();
+                } else {
+                    showMessage(data.detail || 'Error al iniciar captura', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error iniciando captura:', error);
+                showMessage('Error de conexión al iniciar captura', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Detener captura
+        async function stopCapture() {
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_BASE}/stop-capture`, {
+                    method: 'POST'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage(`Captura detenida. Total: ${data.total_frames} frames`, 'success');
+                    isCapturing = false;
+                    updateButtons();
+                } else {
+                    showMessage(data.detail || 'Error al detener captura', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error deteniendo captura:', error);
+                showMessage('Error de conexión al detener captura', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Aplicar filtro
+        function applyFilter() {
+            const filterValue = document.getElementById('trainFilter').value;
+            currentFilter = filterValue === '' ? null : (filterValue === 'true');
+            
+            // Resetear y recargar
+            resetFrames();
+        }
+
+        // Cargar frames iniciales
+        async function loadInitialFrames() {
+            showLoading();
+            
+            try {
+                let url = `${API_BASE}/frames?limit=20&skip=0`;
+                
+                if (currentFilter !== null) {
+                    url += `&filter_trains=${currentFilter}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.frames && Array.isArray(data.frames)) {
+                    frames = data.frames;
+                    displayFrames();
+                    hasMoreFrames = data.frames.length === 20;
+                } else {
+                    throw new Error('Formato de respuesta inválido');
+                }
+                
+            } catch (error) {
+                console.error('Error cargando frames:', error);
+                showMessage(`Error al cargar frames: ${error.message}`, 'error');
+                displayErrorState();
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Cargar más frames (scroll infinito)
+        async function loadMoreFrames() {
+            if (loadingMore || !hasMoreFrames) return;
+            
+            loadingMore = true;
+            document.getElementById('scrollLoading').style.display = 'block';
+            
+            try {
+                const skip = frames.length;
+                let url = `${API_BASE}/frames?limit=20&skip=${skip}`;
+                
+                if (currentFilter !== null) {
+                    url += `&filter_trains=${currentFilter}`;
+                }
+                
+                const response = await fetch(url);
+                const data = await response.json();
+                
+                if (data.frames && Array.isArray(data.frames)) {
+                    if (data.frames.length > 0) {
+                        frames.push(...data.frames);
+                        appendFrames(data.frames);
+                        hasMoreFrames = data.frames.length === 20;
+                    } else {
+                        hasMoreFrames = false;
+                        document.getElementById('scrollEnd').style.display = 'block';
+                    }
+                }
+                
+            } catch (error) {
+                console.error('Error cargando más frames:', error);
+                showMessage(`Error al cargar más frames: ${error.message}`, 'error');
+            } finally {
+                loadingMore = false;
+                document.getElementById('scrollLoading').style.display = 'none';
+            }
+        }
+
+        // Mostrar frames
+        function displayFrames() {
+            const container = document.getElementById('framesContainer');
+            container.innerHTML = '';
+            
+            if (frames.length === 0) {
+                container.innerHTML = `
+                    <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
+                        <h3>No hay frames disponibles</h3>
+                        <p>Inicia una captura para comenzar a generar frames con detección de trenes.</p>
+                    </div>
+                `;
+                return;
+            }
+            
+            frames.forEach((frame, index) => {
+                const frameCard = createFrameCard(frame);
+                frameCard.style.animationDelay = `${index * 0.1}s`;
+                container.appendChild(frameCard);
+            });
+        }
+
+        // Agregar frames al final (para scroll infinito)
+        function appendFrames(newFrames) {
+            const container = document.getElementById('framesContainer');
+            
+            newFrames.forEach((frame, index) => {
+                const frameCard = createFrameCard(frame);
+                frameCard.style.animationDelay = `${index * 0.1}s`;
+                container.appendChild(frameCard);
+            });
+        }
+
+        // Mostrar estado de error
+        function displayErrorState() {
+            const container = document.getElementById('framesContainer');
+            container.innerHTML = `
+                <div style="grid-column: 1/-1; text-align: center; padding: 40px; color: #666;">
+                    <h3>No se pudieron cargar los frames</h3>
+                    <p>Verifica que el servidor esté ejecutándose y la base de datos conectada.</p>
+                    <button class="btn btn-primary" onclick="loadInitialFrames()" style="margin-top: 15px;">
+                        🔄 Reintentar
+                    </button>
+                </div>
+            `;
+        }
+
+        // Resetear frames
+        function resetFrames() {
+            frames = [];
+            hasMoreFrames = true;
+            document.getElementById('scrollEnd').style.display = 'none';
+            document.getElementById('scrollLoading').style.display = 'none';
+            loadInitialFrames();
+        }
+
+        // Toggle auto-scroll
+        function toggleAutoScroll() {
+            autoScroll = !autoScroll;
+            const btn = document.getElementById('autoScrollBtn');
+            
+            if (autoScroll) {
+                btn.classList.add('active');
+                btn.textContent = '📍';
+                btn.title = 'Auto-scroll activado - Click para desactivar';
+            } else {
+                btn.classList.remove('active');
+                btn.textContent = '📌';
+                btn.title = 'Auto-scroll desactivado - Click para activar';
+            }
+        }
+
+        // Modal para imágenes
+        function openModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImage = document.getElementById('modalImage');
+            
+            modalImage.src = imageSrc;
+            modal.style.display = 'block';
+            
+            // Cerrar con ESC
+            document.addEventListener('keydown', function(e) {
+                if (e.key === 'Escape') {
+                    closeModal();
+                }
+            });
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        // Eliminar todos los frames
+        async function deleteAllFrames() {
+            if (!confirm('¿Estás seguro de que quieres eliminar todos los frames? Esta acción no se puede deshacer.')) {
+                return;
+            }
+            
+            showLoading();
+            
+            try {
+                const response = await fetch(`${API_BASE}/frames`, {
+                    method: 'DELETE'
+                });
+                
+                const data = await response.json();
+                
+                if (response.ok) {
+                    showMessage(data.message, 'success');
+                    resetFrames();
+                    getStatus();
+                } else {
+                    showMessage('Error al eliminar frames', 'error');
+                }
+                
+            } catch (error) {
+                console.error('Error eliminando frames:', error);
+                showMessage('Error de conexión al eliminar frames', 'error');
+            } finally {
+                hideLoading();
+            }
+        }
+
+        // Actualizar datos
+        function refreshData() {
+            getStatus();
+            loadInitialFrames();
+        }
+
+        // Scroll infinito
+        function setupInfiniteScroll() {
+            let scrollTimeout;
+            
+            window.addEventListener('scroll', () => {
+                // Debounce scroll events
+                clearTimeout(scrollTimeout);
+                scrollTimeout = setTimeout(() => {
+                    const scrollTop = window.pageYOffset || document.documentElement.scrollTop;
+                    const windowHeight = window.innerHeight;
+                    const documentHeight = document.documentElement.scrollHeight;
+                    
+                    // Cargar más cuando estemos cerca del final (200px antes)
+                    if (scrollTop + windowHeight >= documentHeight - 200) {
+                        loadMoreFrames();
+                    }
+                }, 100);
+            });
+        }
+
+        // Cerrar modal al hacer clic fuera de la imagen
+        document.getElementById('imageModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeModal();
+            }
+        });
+
+        // Inicializar la aplicación
+        document.addEventListener('DOMContentLoaded', function() {
+            // Conectar WebSocket
+            connectWebSocket();
+            
+            // Cargar datos iniciales
+            getStatus();
+            loadInitialFrames();
+            
+            // Configurar scroll infinito
+            setupInfiniteScroll();
+            
+            // Actualizar estado cada 30 segundos (como respaldo al WebSocket)
+            setInterval(() => {
+                if (!isConnected) {
+                    getStatus();
+                }
+            }, 30000);
+            
+            // Reconectar WebSocket si se pierde la conexión
+            setInterval(() => {
+                if (!isConnected || !ws || ws.readyState !== WebSocket.OPEN) {
+                    connectWebSocket();
+                }
+            }, 5000);
+        });
+
+        // Manejar visibilidad de la página
+        document.addEventListener('visibilitychange', function() {
+            if (document.visibilityState === 'visible') {
+                // Reconectar cuando la página vuelve a ser visible
+                if (!isConnected) {
+                    connectWebSocket();
+                }
+            }
+        });
+    </script>
+</body>
+</html>

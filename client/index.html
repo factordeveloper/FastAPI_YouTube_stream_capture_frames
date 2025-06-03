@@ -1,9 +1,9 @@
 <!DOCTYPE html>
-<html lang="es">
+<html lang="en">
 <head>
     <meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
-    <title>Captura de YouTube - Panel de Control</title>
+    <title>Train Detection Client - YouTube Stream</title>
     <style>
         * {
             margin: 0;
@@ -19,191 +19,249 @@
         }
 
         .container {
-            max-width: 800px;
+            max-width: 1400px;
             margin: 0 auto;
-            background: rgba(255, 255, 255, 0.95);
-            backdrop-filter: blur(10px);
-            border-radius: 20px;
-            box-shadow: 0 20px 40px rgba(0, 0, 0, 0.1);
+            background: white;
+            border-radius: 15px;
+            box-shadow: 0 20px 40px rgba(0,0,0,0.1);
             overflow: hidden;
         }
 
         .header {
-            background: linear-gradient(135deg, #ff6b6b, #ee5a24);
+            background: linear-gradient(135deg, #2c3e50 0%, #34495e 100%);
             color: white;
             padding: 30px;
             text-align: center;
-            position: relative;
-            overflow: hidden;
-        }
-
-        .header::before {
-            content: '';
-            position: absolute;
-            top: -50%;
-            left: -50%;
-            width: 200%;
-            height: 200%;
-            background: repeating-linear-gradient(
-                45deg,
-                transparent,
-                transparent 10px,
-                rgba(255, 255, 255, 0.1) 10px,
-                rgba(255, 255, 255, 0.1) 20px
-            );
-            animation: slide 20s linear infinite;
-        }
-
-        @keyframes slide {
-            0% { transform: translateX(-50px); }
-            100% { transform: translateX(50px); }
         }
 
         .header h1 {
             font-size: 2.5em;
             margin-bottom: 10px;
-            position: relative;
-            z-index: 1;
+            font-weight: 300;
         }
 
         .header p {
             font-size: 1.1em;
             opacity: 0.9;
-            position: relative;
-            z-index: 1;
         }
 
-        .content {
-            padding: 40px;
-        }
-
-        .form-section {
-            background: #f8f9fa;
-            border-radius: 15px;
+        .stats-container {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(200px, 1fr));
+            gap: 20px;
             padding: 30px;
-            margin-bottom: 30px;
-            border: 2px solid #e9ecef;
-            transition: all 0.3s ease;
+            background: #f8f9fa;
+            border-bottom: 1px solid #e9ecef;
         }
 
-        .form-section:hover {
-            border-color: #667eea;
-            transform: translateY(-2px);
-            box-shadow: 0 10px 25px rgba(0, 0, 0, 0.1);
-        }
-
-        .form-group {
-            margin-bottom: 25px;
-        }
-
-        label {
-            display: block;
-            margin-bottom: 8px;
-            font-weight: 600;
-            color: #333;
-            font-size: 1.1em;
-        }
-
-        input[type="url"], input[type="number"] {
-            width: 100%;
-            padding: 15px;
-            border: 2px solid #ddd;
-            border-radius: 10px;
-            font-size: 16px;
-            transition: all 0.3s ease;
+        .stat-card {
             background: white;
+            padding: 20px;
+            border-radius: 10px;
+            text-align: center;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
+            transition: transform 0.3s ease;
         }
 
-        input[type="url"]:focus, input[type="number"]:focus {
-            outline: none;
-            border-color: #667eea;
-            box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
-            transform: scale(1.02);
+        .stat-card:hover {
+            transform: translateY(-5px);
+        }
+
+        .stat-number {
+            font-size: 2em;
+            font-weight: bold;
+            margin-bottom: 5px;
+        }
+
+        .stat-label {
+            color: #6c757d;
+            font-size: 0.9em;
+        }
+
+        .stat-trains { color: #28a745; }
+        .stat-no-trains { color: #dc3545; }
+        .stat-total { color: #007bff; }
+        .stat-rate { color: #fd7e14; }
+
+        .controls {
+            padding: 30px;
+            background: white;
+            border-bottom: 1px solid #e9ecef;
+        }
+
+        .controls-row {
+            display: flex;
+            gap: 15px;
+            align-items: center;
+            flex-wrap: wrap;
+            margin-bottom: 15px;
         }
 
         .btn {
-            background: linear-gradient(135deg, #667eea, #764ba2);
-            color: white;
+            padding: 12px 24px;
             border: none;
-            padding: 15px 30px;
-            border-radius: 50px;
-            font-size: 16px;
-            font-weight: 600;
+            border-radius: 25px;
             cursor: pointer;
+            font-size: 14px;
+            font-weight: 500;
             transition: all 0.3s ease;
-            text-transform: uppercase;
-            letter-spacing: 1px;
-            box-shadow: 0 5px 15px rgba(102, 126, 234, 0.4);
+            text-decoration: none;
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
         }
 
-        .btn:hover {
-            transform: translateY(-3px);
-            box-shadow: 0 10px 25px rgba(102, 126, 234, 0.6);
+        .btn-primary {
+            background: linear-gradient(135deg, #007bff, #0056b3);
+            color: white;
         }
 
-        .btn:active {
-            transform: translateY(-1px);
+        .btn-success {
+            background: linear-gradient(135deg, #28a745, #1e7e34);
+            color: white;
+        }
+
+        .btn-danger {
+            background: linear-gradient(135deg, #dc3545, #c82333);
+            color: white;
         }
 
         .btn-secondary {
-            background: linear-gradient(135deg, #ffa726, #ff7043);
-            box-shadow: 0 5px 15px rgba(255, 167, 38, 0.4);
+            background: linear-gradient(135deg, #6c757d, #545b62);
+            color: white;
         }
 
-        .btn-secondary:hover {
-            box-shadow: 0 10px 25px rgba(255, 167, 38, 0.6);
+        .btn:hover {
+            transform: translateY(-2px);
+            box-shadow: 0 5px 15px rgba(0,0,0,0.2);
         }
 
-        .status-section {
-            background: linear-gradient(135deg, #e8f5e8, #f0f8f0);
-            border-radius: 15px;
+        .filter-controls {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .filter-controls select {
+            padding: 8px 12px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            font-size: 14px;
+        }
+
+        .pagination {
+            display: flex;
+            gap: 10px;
+            align-items: center;
+        }
+
+        .pagination input {
+            width: 80px;
+            padding: 8px;
+            border: 2px solid #e9ecef;
+            border-radius: 5px;
+            text-align: center;
+        }
+
+        .table-container {
             padding: 30px;
-            border: 2px solid #c8e6c9;
+            overflow-x: auto;
         }
 
-        .status-display {
+        .frames-table {
+            width: 100%;
+            border-collapse: collapse;
             background: white;
             border-radius: 10px;
-            padding: 20px;
-            margin-top: 20px;
-            border-left: 5px solid #4caf50;
-            box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+            overflow: hidden;
+            box-shadow: 0 5px 15px rgba(0,0,0,0.1);
         }
 
-        .status-item {
-            display: flex;
-            justify-content: space-between;
-            align-items: center;
-            padding: 10px 0;
-            border-bottom: 1px solid #eee;
+        .frames-table th {
+            background: linear-gradient(135deg, #343a40, #495057);
+            color: white;
+            padding: 15px;
+            text-align: left;
+            font-weight: 500;
+            font-size: 14px;
+            text-transform: uppercase;
+            letter-spacing: 0.5px;
         }
 
-        .status-item:last-child {
-            border-bottom: none;
+        .frames-table td {
+            padding: 15px;
+            border-bottom: 1px solid #e9ecef;
+            vertical-align: middle;
         }
 
-        .status-label {
-            font-weight: 600;
-            color: #555;
+        .frames-table tr:hover {
+            background-color: #f8f9fa;
         }
 
-        .status-value {
-            color: #333;
-            font-family: monospace;
-            background: #f5f5f5;
-            padding: 5px 10px;
+        .row-with-trains {
+            background-color: rgba(40, 167, 69, 0.1) !important;
+            border-left: 4px solid #28a745;
+        }
+
+        .row-without-trains {
+            background-color: rgba(220, 53, 69, 0.1) !important;
+            border-left: 4px solid #dc3545;
+        }
+
+        .image-preview {
+            width: 80px;
+            height: 60px;
+            object-fit: cover;
             border-radius: 5px;
+            cursor: pointer;
+            transition: transform 0.3s ease;
+        }
+
+        .image-preview:hover {
+            transform: scale(1.1);
+        }
+
+        .detection-badge {
+            padding: 4px 12px;
+            border-radius: 15px;
+            font-size: 12px;
+            font-weight: bold;
+            text-transform: uppercase;
+        }
+
+        .badge-trains {
+            background-color: #28a745;
+            color: white;
+        }
+
+        .badge-no-trains {
+            background-color: #dc3545;
+            color: white;
+        }
+
+        .detection-count {
+            background: linear-gradient(135deg, #ffc107, #e0a800);
+            color: #212529;
+            padding: 4px 8px;
+            border-radius: 10px;
+            font-weight: bold;
+            font-size: 12px;
         }
 
         .loading {
-            display: inline-block;
-            width: 20px;
-            height: 20px;
-            border: 3px solid #f3f3f3;
-            border-top: 3px solid #667eea;
+            text-align: center;
+            padding: 40px;
+            color: #6c757d;
+        }
+
+        .loading-spinner {
+            border: 4px solid #f3f3f3;
+            border-top: 4px solid #007bff;
             border-radius: 50%;
+            width: 40px;
+            height: 40px;
             animation: spin 1s linear infinite;
-            margin-left: 10px;
+            margin: 0 auto 20px;
         }
 
         @keyframes spin {
@@ -211,47 +269,98 @@
             100% { transform: rotate(360deg); }
         }
 
-        .alert {
-            padding: 15px;
+        .modal {
+            display: none;
+            position: fixed;
+            z-index: 1000;
+            left: 0;
+            top: 0;
+            width: 100%;
+            height: 100%;
+            background-color: rgba(0,0,0,0.9);
+        }
+
+        .modal-content {
+            margin: auto;
+            display: block;
+            width: 80%;
+            max-width: 800px;
+            max-height: 80%;
             border-radius: 10px;
-            margin: 20px 0;
-            font-weight: 500;
+            position: relative;
+            top: 50%;
+            transform: translateY(-50%);
         }
 
-        .alert-success {
-            background: #d4edda;
-            color: #155724;
-            border: 1px solid #c3e6cb;
+        .close {
+            position: absolute;
+            top: 15px;
+            right: 35px;
+            color: #f1f1f1;
+            font-size: 40px;
+            font-weight: bold;
+            cursor: pointer;
         }
 
-        .alert-error {
-            background: #f8d7da;
-            color: #721c24;
-            border: 1px solid #f5c6cb;
+        .close:hover {
+            color: #bbb;
         }
 
-        .alert-info {
-            background: #cce7ff;
-            color: #004085;
-            border: 1px solid #b3d7ff;
+        .status-indicator {
+            display: inline-block;
+            width: 12px;
+            height: 12px;
+            border-radius: 50%;
+            margin-right: 8px;
+        }
+
+        .status-active {
+            background-color: #28a745;
+            animation: pulse 2s infinite;
+        }
+
+        .status-inactive {
+            background-color: #dc3545;
+        }
+
+        @keyframes pulse {
+            0% { opacity: 1; }
+            50% { opacity: 0.5; }
+            100% { opacity: 1; }
+        }
+
+        .empty-state {
+            text-align: center;
+            padding: 60px 20px;
+            color: #6c757d;
+        }
+
+        .empty-state h3 {
+            margin-bottom: 10px;
+            font-size: 1.2em;
         }
 
         @media (max-width: 768px) {
-            .container {
-                margin: 10px;
-                border-radius: 15px;
+            .controls-row {
+                flex-direction: column;
+                align-items: stretch;
             }
-            
-            .content {
-                padding: 20px;
+
+            .stats-container {
+                grid-template-columns: 1fr;
             }
-            
-            .header h1 {
-                font-size: 2em;
+
+            .frames-table {
+                font-size: 14px;
             }
-            
-            .form-section {
-                padding: 20px;
+
+            .frames-table th,
+            .frames-table td {
+                padding: 10px 8px;
+            }
+
+            .modal-content {
+                width: 95%;
             }
         }
     </style>
@@ -259,287 +368,348 @@
 <body>
     <div class="container">
         <div class="header">
-            <h1>🎥 Captura de YouTube</h1>
-            <p>Panel de Control para Captura de Streams</p>
+            <h1>🚂 Train Detection on YouTube Stream</h1>
+            <p>Capture monitor with automatic classification using YOLO</p>
         </div>
-        
-        <div class="content">
-            <!-- Sección de inicio de captura -->
-            <div class="form-section">
-                <h2>🚀 Iniciar Nueva Captura</h2>
-                <form id="captureForm">
-                    <div class="form-group">
-                        <label for="youtubeUrl">URL de YouTube:</label>
-                        <input 
-                            type="url" 
-                            id="youtubeUrl" 
-                            name="youtubeUrl" 
-                            placeholder="https://www.youtube.com/watch?v=STREAM_ID"
-                            required
-                        >
-                    </div>
-                    
-                    <div class="form-group">
-                        <label for="duration">Duración (minutos):</label>
-                        <input 
-                            type="number" 
-                            id="duration" 
-                            name="duration" 
-                            min="1" 
-                            max="300" 
-                            value="30"
-                            required
-                        >
-                    </div>
-                    
-                    <button type="submit" class="btn">
-                        Iniciar Captura
-                    </button>
-                </form>
-            </div>
 
-            <!-- Sección de estado -->
-            <div class="status-section">
-                <h2>📊 Estado del Sistema</h2>
-                <button type="button" class="btn btn-secondary" onclick="checkStatus()">
-                    Actualizar Estado
+        <div class="stats-container" id="statsContainer">
+            <div class="stat-card">
+                <div class="stat-number stat-total" id="totalFrames">0</div>
+                <div class="stat-label">Total Frames</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number stat-trains" id="trainsDetected">0</div>
+                <div class="stat-label">With Trains</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number stat-no-trains" id="noTrainsDetected">0</div>
+                <div class="stat-label">Without Trains</div>
+            </div>
+            <div class="stat-card">
+                <div class="stat-number stat-rate" id="detectionRate">0%</div>
+                <div class="stat-label">Detection Rate</div>
+            </div>
+        </div>
+
+        <div class="controls">
+            <div class="controls-row">
+                <button class="btn btn-primary" onclick="loadFrames()">
+                    🔄 Update
+                </button>
+                <button class="btn btn-success" onclick="getStatus()">
+                    📊 System Status
+                </button>
+                <button class="btn btn-danger" onclick="deleteAllFrames()">
+                    🗑️ Delete All
                 </button>
                 
-                <div id="statusDisplay" class="status-display" style="display: none;">
-                    <div class="status-item">
-                        <span class="status-label">Estado:</span>
-                        <span class="status-value" id="statusValue">-</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">URL Actual:</span>
-                        <span class="status-value" id="currentUrl">-</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Duración:</span>
-                        <span class="status-value" id="currentDuration">-</span>
-                    </div>
-                    <div class="status-item">
-                        <span class="status-label">Tiempo Transcurrido:</span>
-                        <span class="status-value" id="elapsedTime">-</span>
-                    </div>
+                <div class="filter-controls">
+                    <label>Filter:</label>
+                    <select id="filterSelect" onchange="loadFrames()">
+                        <option value="">All Frames</option>
+                        <option value="true">Only With Trains</option>
+                        <option value="false">Only Without Trains</option>
+                    </select>
+                </div>
+
+                <div class="pagination">
+                    <label>Limit:</label>
+                    <input type="number" id="limitInput" value="20" min="1" max="100" onchange="loadFrames()">
+                    <label>Page:</label>
+                    <input type="number" id="pageInput" value="1" min="1" onchange="loadFrames()">
+                    <button class="btn btn-secondary" onclick="previousPage()">◀</button>
+                    <button class="btn btn-secondary" onclick="nextPage()">▶</button>
                 </div>
             </div>
 
-            <!-- Área de mensajes -->
-            <div id="messageArea"></div>
+            <div class="controls-row">
+                <div id="systemStatus" style="display: flex; align-items: center;">
+                    <span class="status-indicator status-inactive"></span>
+                    <span>System: Disconnected</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="table-container">
+            <div class="loading" id="loadingIndicator">
+                <div class="loading-spinner"></div>
+                <p>Loading frames...</p>
+            </div>
+
+            <div class="empty-state" id="emptyState" style="display: none;">
+                <h3>📷 No Frames Available</h3>
+                <p>Start the capture to begin viewing classified images</p>
+            </div>
+
+            <table class="frames-table" id="framesTable" style="display: none;">
+                <thead>
+                    <tr>
+                        <th>Preview</th>
+                        <th>File Name</th>
+                        <th>Timestamp</th>
+                        <th>Detection</th>
+                        <th>Count</th>
+                        <th>Size</th>
+                        <th>Actions</th>
+                    </tr>
+                </thead>
+                <tbody id="framesTableBody">
+                </tbody>
+            </table>
         </div>
     </div>
 
-    <script>
-        // Detectar si estamos en desarrollo local o necesitamos proxy
-        const API_BASE = 'http://localhost:8000';
-        
-        // Test de conectividad al cargar
-        async function testConnection() {
-            try {
-                console.log('Probando conexión a la API...');
-                const response = await fetch(`${API_BASE}/status`, { 
-                    method: 'GET',
-                    mode: 'cors'
-                });
-                console.log('✅ Conexión exitosa a la API');
-                return true;
-            } catch (error) {
-                console.error('❌ Error de conexión inicial:', error);
-                showMessage(`⚠️ No se puede conectar a la API en ${API_BASE}. Verifica que esté corriendo.`, 'error');
-                return false;
-            }
-        }
-        
-        // Elementos del DOM
-        const captureForm = document.getElementById('captureForm');
-        const statusDisplay = document.getElementById('statusDisplay');
-        const messageArea = document.getElementById('messageArea');
+    <div id="imageModal" class="modal">
+        <span class="close" onclick="closeModal()">&times;</span>
+        <img class="modal-content" id="modalImage">
+    </div>
 
-        // Inicializar la aplicación
-        document.addEventListener('DOMContentLoaded', async function() {
-            console.log('Iniciando aplicación...');
+    <script>
+        const API_BASE_URL = 'http://localhost:8000';
+        let currentPage = 1;
+        let totalPages = 1;
+
+        // Load frames on page load
+        document.addEventListener('DOMContentLoaded', function() {
+            loadFrames();
+            getStatus();
             
-            // Test inicial de conexión
-            const connected = await testConnection();
-            
-            if (connected) {
-                checkStatus();
-                // Auto-actualizar estado cada 30 segundos
-                setInterval(checkStatus, 30000);
-            } else {
-                // Mostrar sugerencias de solución
-                setTimeout(() => {
-                    showMessage(`💡 Posibles soluciones:
-                    1. Verifica que tu API esté corriendo en localhost:8000
-                    2. Abre la consola del navegador (F12) para más detalles
-                    3. Verifica la configuración de CORS en FastAPI`, 'info');
-                }, 2000);
-            }
+            // Update status every 30 seconds
+            setInterval(getStatus, 30000);
         });
 
-        // Manejar envío del formulario
-        captureForm.addEventListener('submit', async function(e) {
-            e.preventDefault();
+        async function loadFrames() {
+            showLoading();
             
-            const formData = new FormData(captureForm);
-            const youtubeUrl = formData.get('youtubeUrl');
-            const duration = parseInt(formData.get('duration'));
+            try {
+                const limit = document.getElementById('limitInput').value || 20;
+                const page = document.getElementById('pageInput').value || 1;
+                const skip = (page - 1) * limit;
+                const filter = document.getElementById('filterSelect').value;
+                
+                let url = `${API_BASE_URL}/frames?limit=${limit}&skip=${skip}`;
+                if (filter !== '') {
+                    url += `&filter_trains=${filter}`;
+                }
+
+                const response = await fetch(url);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const data = await response.json();
+                
+                // Update stats
+                updateStats(data);
+                
+                // Display frames
+                displayFrames(data.frames);
+                
+                // Calculate pagination
+                totalPages = Math.ceil(data.total / limit);
+                currentPage = parseInt(page);
+                
+            } catch (error) {
+                console.error('Error loading frames:', error);
+                showError('Error loading frames: ' + error.message);
+            }
+        }
+
+        function updateStats(data) {
+            document.getElementById('totalFrames').textContent = data.total_all_frames || 0;
+            document.getElementById('trainsDetected').textContent = data.total_with_trains || 0;
+            document.getElementById('noTrainsDetected').textContent = data.total_without_trains || 0;
             
-            if (!youtubeUrl || !duration) {
-                showMessage('Por favor completa todos los campos', 'error');
+            const rate = data.total_all_frames > 0 ? 
+                ((data.total_with_trains / data.total_all_frames) * 100).toFixed(1) : 0;
+            document.getElementById('detectionRate').textContent = rate + '%';
+        }
+
+        function displayFrames(frames) {
+            const tableBody = document.getElementById('framesTableBody');
+            const table = document.getElementById('framesTable');
+            const emptyState = document.getElementById('emptyState');
+            
+            hideLoading();
+            
+            if (!frames || frames.length === 0) {
+                table.style.display = 'none';
+                emptyState.style.display = 'block';
                 return;
             }
 
-            await startCapture(youtubeUrl, duration);
-        });
-
-        // Función para iniciar captura
-        async function startCapture(youtubeUrl, durationMinutes) {
-            try {
-                showMessage('Iniciando captura...', 'info');
+            emptyState.style.display = 'none';
+            table.style.display = 'table';
+            
+            tableBody.innerHTML = '';
+            
+            frames.forEach(frame => {
+                const row = document.createElement('tr');
+                row.className = frame.has_trains ? 'row-with-trains' : 'row-without-trains';
                 
-                console.log('Intentando conectar a:', `${API_BASE}/start-capture`);
-                
-                const response = await fetch(`${API_BASE}/start-capture`, {
-                    method: 'POST',
-                    headers: {
-                        'Content-Type': 'application/json',
-                    },
-                    body: JSON.stringify({
-                        youtube_url: youtubeUrl,
-                        duration_minutes: durationMinutes
-                    })
+                const timestamp = new Date(frame.timestamp).toLocaleString('en-US', {
+                    year: 'numeric',
+                    month: '2-digit',
+                    day: '2-digit',
+                    hour: '2-digit',
+                    minute: '2-digit',
+                    second: '2-digit'
                 });
 
-                console.log('Response status:', response.status);
-                console.log('Response headers:', [...response.headers.entries()]);
+                const detectionBadge = frame.has_trains 
+                    ? '<span class="detection-badge badge-trains">With Trains</span>'
+                    : '<span class="detection-badge badge-no-trains">No Trains</span>';
 
-                const data = await response.json();
+                const detectionCount = frame.detection_count > 0 
+                    ? `<span class="detection-count">${frame.detection_count}</span>`
+                    : '-';
 
-                if (response.ok) {
-                    showMessage('✅ Captura iniciada exitosamente', 'success');
-                    
-                    // Limpiar formulario
-                    captureForm.reset();
-                    document.getElementById('duration').value = '30';
-                    
-                    // Actualizar estado
-                    setTimeout(checkStatus, 1000);
-                } else {
-                    showMessage(`❌ Error HTTP ${response.status}: ${data.detail || 'Error desconocido'}`, 'error');
-                }
-            } catch (error) {
-                console.error('Error completo:', error);
+                const fileSize = frame.size ? formatFileSize(frame.size) : 'N/A';
+
+                row.innerHTML = `
+                    <td>
+                        <img src="${API_BASE_URL}/frame/${frame.filename}" 
+                             alt="Frame ${frame.filename}"
+                             class="image-preview"
+                             onclick="openModal('${API_BASE_URL}/frame/${frame.filename}')"
+                             onerror="this.src='data:image/svg+xml;base64,PHN2ZyB3aWR0aD0iODAiIGhlaWdodD0iNjAiIHZpZXdCb3g9IjAgMCA4MCA2MCIgZmlsbD0ibm9uZSIgeG1sbnM9Imh0dHA6Ly93d3cudzMub3JnLzIwMDAvc3ZnIj4KPHJlY3Qgd2lkdGg9IjgwIiBoZWlnaHQ9IjYwIiBmaWxsPSIjZjhmOWZhIi8+CjxwYXRoIGQ9Ik0yNSAyMEw1NSA0MEwyNSA2MFYyMCIgZmlsbD0iIzZjNzU3ZCIvPgo8L3N2Zz+'">
+                    </td>
+                    <td title="${frame.filename}">${frame.filename.length > 30 ? frame.filename.substring(0, 30) + '...' : frame.filename}</td>
+                    <td>${timestamp}</td>
+                    <td>${detectionBadge}</td>
+                    <td>${detectionCount}</td>
+                    <td>${fileSize}</td>
+                    <td>
+                        <button class="btn btn-primary" onclick="downloadImage('${frame.filename}')" style="padding: 6px 12px; font-size: 12px;">
+                            💾 Download
+                        </button>
+                    </td>
+                `;
                 
-                // Diagnóstico más detallado
-                if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    showMessage(`❌ No se puede conectar al servidor en ${API_BASE}. ¿Está corriendo la API?`, 'error');
-                } else if (error.name === 'NetworkError') {
-                    showMessage(`❌ Error de red: Verifica CORS y que la API esté accesible`, 'error');
-                } else {
-                    showMessage(`❌ Error: ${error.message}`, 'error');
-                }
-            }
+                tableBody.appendChild(row);
+            });
         }
 
-        // Función para verificar estado
-        async function checkStatus() {
+        function formatFileSize(bytes) {
+            if (bytes === 0) return '0 Bytes';
+            const k = 1024;
+            const sizes = ['Bytes', 'KB', 'MB', 'GB'];
+            const i = Math.floor(Math.log(bytes) / Math.log(k));
+            return parseFloat((bytes / Math.pow(k, i)).toFixed(2)) + ' ' + sizes[i];
+        }
+
+        async function getStatus() {
             try {
-                console.log('Verificando estado en:', `${API_BASE}/status`);
-                
-                const response = await fetch(`${API_BASE}/status`);
-                console.log('Status response:', response.status);
-                
-                const data = await response.json();
-
-                if (response.ok) {
-                    updateStatusDisplay(data);
-                    statusDisplay.style.display = 'block';
-                } else {
-                    showMessage(`❌ Error al obtener estado HTTP ${response.status}: ${data.detail || 'Error desconocido'}`, 'error');
+                const response = await fetch(`${API_BASE_URL}/status`);
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
                 }
+
+                const status = await response.json();
+                updateSystemStatus(status);
+                
             } catch (error) {
-                console.error('Error al verificar estado:', error);
-                
-                if (error.name === 'TypeError' && error.message.includes('fetch')) {
-                    showMessage(`❌ No se puede conectar para verificar estado. ¿La API está corriendo en ${API_BASE}?`, 'error');
-                } else {
-                    showMessage(`❌ Error al verificar estado: ${error.message}`, 'error');
-                }
+                console.error('Error getting status:', error);
+                updateSystemStatus({ capture_active: false, database_status: 'disconnected' });
             }
         }
 
-        // Actualizar la visualización del estado
-        function updateStatusDisplay(data) {
-            document.getElementById('statusValue').textContent = data.status || 'Desconocido';
-            document.getElementById('currentUrl').textContent = data.current_url || 'Ninguna';
-            document.getElementById('currentDuration').textContent = 
-                data.duration_minutes ? `${data.duration_minutes} minutos` : 'N/A';
+        function updateSystemStatus(status) {
+            const statusElement = document.getElementById('systemStatus');
+            const indicator = statusElement.querySelector('.status-indicator');
+            const text = statusElement.querySelector('span:last-child');
             
-            // Calcular tiempo transcurrido si hay datos
-            let elapsedText = 'N/A';
-            if (data.start_time && data.status === 'capturing') {
-                const startTime = new Date(data.start_time);
-                const now = new Date();
-                const elapsedMs = now - startTime;
-                const elapsedMinutes = Math.floor(elapsedMs / 60000);
-                const elapsedSeconds = Math.floor((elapsedMs % 60000) / 1000);
-                elapsedText = `${elapsedMinutes}:${elapsedSeconds.toString().padStart(2, '0')}`;
-            }
-            
-            document.getElementById('elapsedTime').textContent = elapsedText;
-
-            // Cambiar color según el estado
-            const statusElement = document.getElementById('statusValue');
-            statusElement.className = 'status-value';
-            
-            if (data.status === 'capturing') {
-                statusElement.style.backgroundColor = '#c8e6c9';
-                statusElement.style.color = '#2e7d32';
-            } else if (data.status === 'idle') {
-                statusElement.style.backgroundColor = '#e3f2fd';
-                statusElement.style.color = '#1976d2';
-            } else if (data.status === 'error') {
-                statusElement.style.backgroundColor = '#ffebee';
-                statusElement.style.color = '#c62828';
-            }
-        }
-
-        // Mostrar mensajes al usuario
-        function showMessage(message, type) {
-            const alertDiv = document.createElement('div');
-            alertDiv.className = `alert alert-${type}`;
-            alertDiv.textContent = message;
-            
-            messageArea.innerHTML = '';
-            messageArea.appendChild(alertDiv);
-            
-            // Auto-ocultar después de 5 segundos
-            setTimeout(() => {
-                alertDiv.style.opacity = '0';
-                alertDiv.style.transform = 'translateY(-10px)';
-                setTimeout(() => {
-                    if (alertDiv.parentNode) {
-                        alertDiv.parentNode.removeChild(alertDiv);
-                    }
-                }, 300);
-            }, 5000);
-        }
-
-        // Validación en tiempo real de URL
-        document.getElementById('youtubeUrl').addEventListener('input', function(e) {
-            const url = e.target.value;
-            const isValid = url.includes('youtube.com/watch') || url.includes('youtu.be/');
-            
-            if (url && !isValid) {
-                e.target.style.borderColor = '#ff6b6b';
-                e.target.style.boxShadow = '0 0 0 3px rgba(255, 107, 107, 0.1)';
+            if (status.capture_active) {
+                indicator.className = 'status-indicator status-active';
+                text.textContent = 'System: Actively capturing frames';
             } else {
-                e.target.style.borderColor = '#ddd';
-                e.target.style.boxShadow = 'none';
+                indicator.className = 'status-indicator status-inactive';
+                text.textContent = `System: Inactive (DB: ${status.database_status || 'unknown'})`;
             }
-        });
+        }
+
+        async function deleteAllFrames() {
+            if (!confirm('Are you sure you want to delete all frames? This action cannot be undone.')) {
+                return;
+            }
+
+            try {
+                const response = await fetch(`${API_BASE_URL}/frames`, {
+                    method: 'DELETE'
+                });
+
+                if (!response.ok) {
+                    throw new Error(`HTTP error! status: ${response.status}`);
+                }
+
+                const result = await response.json();
+                alert(`✅ ${result.message}`);
+                loadFrames();
+                
+            } catch (error) {
+                console.error('Error deleting frames:', error);
+                alert('❌ Error deleting frames: ' + error.message);
+            }
+        }
+
+        function downloadImage(filename) {
+            const link = document.createElement('a');
+            link.href = `${API_BASE_URL}/frame/${filename}`;
+            link.download = filename;
+            document.body.appendChild(link);
+            link.click();
+            document.body.removeChild(link);
+        }
+
+        function openModal(imageSrc) {
+            const modal = document.getElementById('imageModal');
+            const modalImg = document.getElementById('modalImage');
+            modal.style.display = 'block';
+            modalImg.src = imageSrc;
+        }
+
+        function closeModal() {
+            document.getElementById('imageModal').style.display = 'none';
+        }
+
+        function previousPage() {
+            if (currentPage > 1) {
+                currentPage--;
+                document.getElementById('pageInput').value = currentPage;
+                loadFrames();
+            }
+        }
+
+        function nextPage() {
+            if (currentPage < totalPages) {
+                currentPage++;
+                document.getElementById('pageInput').value = currentPage;
+                loadFrames();
+            }
+        }
+
+        function showLoading() {
+            document.getElementById('loadingIndicator').style.display = 'block';
+            document.getElementById('framesTable').style.display = 'none';
+            document.getElementById('emptyState').style.display = 'none';
+        }
+
+        function hideLoading() {
+            document.getElementById('loadingIndicator').style.display = 'none';
+        }
+
+        function showError(message) {
+            hideLoading();
+            alert('❌ ' + message);
+        }
+
+        // Close modal when clicking outside the image
+        window.onclick = function(event) {
+            const modal = document.getElementById('imageModal');
+            if (event.target === modal) {
+                closeModal();
+            }
+        }
     </script>
 </body>
 </html>

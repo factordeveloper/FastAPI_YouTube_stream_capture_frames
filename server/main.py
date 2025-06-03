@@ -1,4 +1,4 @@
-from fastapi import FastAPI, HTTPException, BackgroundTasks
+from fastapi import FastAPI, HTTPException, BackgroundTasks, Response  
 from pydantic import BaseModel
 import cv2
 import numpy as np
@@ -17,7 +17,13 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-app = FastAPI()
+
+
+# Configuración de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="YouTube Stream Frame Capture", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -26,12 +32,6 @@ app.add_middleware(
     allow_methods=["*"],  # Permite todos los métodos HTTP
     allow_headers=["*"],  # Permite todos los headers
 )
-
-# Configuración de logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-app = FastAPI(title="YouTube Stream Frame Capture", version="1.0.0")
 
 # Configuración de MongoDB
 MONGO_URL = "mongodb://localhost:27017"
@@ -297,4 +297,4 @@ async def shutdown_event():
 
 if __name__ == "__main__":
     import uvicorn
-    uvicorn.run(app, host="0.0.0.0", port=8000)
+    uvicorn.run(app, host="127.0.0.1", port=8000)

@@ -19,7 +19,12 @@ from fastapi import FastAPI
 from fastapi.middleware.cors import CORSMiddleware
 
 
-app = FastAPI()
+
+# Configuración de logging
+logging.basicConfig(level=logging.INFO)
+logger = logging.getLogger(__name__)
+
+app = FastAPI(title="YouTube Stream Frame Capture", version="1.0.0")
 
 app.add_middleware(
     CORSMiddleware,
@@ -29,15 +34,10 @@ app.add_middleware(
     allow_headers=["*"],  # Permite todos los headers
 )
 
-# Configuración de logging
-logging.basicConfig(level=logging.INFO)
-logger = logging.getLogger(__name__)
-
-app = FastAPI(title="YouTube Stream Frame Capture", version="1.0.0")
 
 # Configuración de MongoDB (solo para metadatos)
 MONGO_URL = "mongodb://localhost:27017"
-DATABASE_NAME = "youtube_frames"
+DATABASE_NAME = "youtube_stream_frames"
 COLLECTION_NAME = "frames"
 
 # Configuración de carpeta local para imágenes
